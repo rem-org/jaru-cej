@@ -1,0 +1,42 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  prisma:
+    image: node:16-alpine
+    container_name: prisma
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - DATABASE_URL=mysql://root:jaruapi@jaru-api-mysql-1:3306/jaru_cej  
+    networks:
+      - jaru-api_app-network
+    command: >
+      sh -c "npx prisma generate --schema=/app/prisma/schema.prisma && npx prisma db push --schema=/app/prisma/schema.prisma"
+
+  selenium:
+    image: selenium/standalone-chrome
+    container_name: selenium
+    ports:
+      - "4444:4444"  # Exponer el puerto del servidor Selenium
+    networks:
+      - jaru-api_app-network
+
+  cej_scraping:
+    build:
+      context: .
+      dockerfile: python/Dockerfile
+    container_name: cej_scraping
+    volumes:
+      - .:/app
+    networks:
+      - jaru-api_app-network
+    environment:
+      - DATABASE_URL=mysql://root:jaruapi@jaru-api-mysql-1:3306/jaru_cej
+      - API_KEY=FXD12Wh2tZtW0K6GaBHhcu5bVRYZxI23jthKtloruV1S3lHcjT9dgjl7Gfnh9zkt
+      - API_KEY_NAME=X-API-KEY
+
+networks:
+  jaru-api_app-network:
+    external: true  
