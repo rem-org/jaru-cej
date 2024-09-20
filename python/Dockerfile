@@ -7,6 +7,9 @@ RUN apt-get update && apt-get install -y curl && \
     apt-get install -y nodejs && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Instalar Prisma localmente en el proyecto
+RUN npm install -g prisma
+
 # Establecer el directorio de trabajo
 WORKDIR /app
 
@@ -18,26 +21,24 @@ COPY python/app/requirements.txt .
 COPY python/app/ /app/
 COPY python/entrypoint.sh /entrypoint.sh
 
+RUN pip install --no-cache-dir -r requirements.txt
+
 # Crear y activar el entorno virtual
-RUN python -m venv /app/venv
+#RUN python -m venv /app/venv
 
 # Actualizar pip en el entorno virtual
-RUN /app/venv/bin/pip install --upgrade pip
+#RUN /app/venv/bin/pip install --upgrade pip
 
 # Instalar dependencias de Python en el entorno virtual
-RUN /app/venv/bin/pip install --no-cache-dir -r requirements.txt
+#RUN /app/venv/bin/pip install --no-cache-dir -r requirements.txt
 
-# Instalar Prisma localmente en el proyecto
-RUN npm install prisma@4.15.0 prisma-client-py
 
-# Instalar Prisma Client para Python en el entorno virtual
-RUN /app/venv/bin/pip install prisma-client
 
 # Generar Prisma Client
-RUN npx prisma generate --schema=/app/prisma/schema.prisma
+#RUN npx prisma generate --schema=/app/prisma/schema.prisma
 
-# Dar permisos de ejecución al script de entrada
-RUN chmod +x /entrypoint.sh
+# Generate the Prisma client
+RUN prisma generate
 
-# Establecer el entrypoint
-ENTRYPOINT ["/entrypoint.sh"]
+# Command to run your Python script
+CMD ["python", "main.py"]
