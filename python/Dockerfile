@@ -1,30 +1,43 @@
 # Imagen base de Python
 FROM python:3.11-slim
 
-# Instalar Node.js (versión 16.x) y NPM
+# Instalar Node.js y NPM
 RUN apt-get update && apt-get install -y curl && \
     curl -fsSL https://deb.nodesource.com/setup_16.x | bash - && \
     apt-get install -y nodejs && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Instalar Prisma localmente dentro del proyecto
+# Establecer el directorio de trabajo
 WORKDIR /app
-COPY package.json ./
-RUN npm install prisma@4.15.0
 
-# Copiar los archivos de Prisma y el archivo .env
-COPY prisma/ /app/prisma/
-COPY app/.env /app/.env
+# Copiar archivos necesarios
+COPY python/package.json ./
+COPY python/prisma/ /app/prisma/
+COPY python/app/.env /app/.env
+COPY python/app/requirements.txt .
+COPY python/app/ /app/
+COPY python/entrypoint.sh /entrypoint.sh
 
-# Instalar las dependencias de la aplicación Python
-COPY app/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Crear y activar el entorno virtual
+RUN python -m venv /app/venv
 
-# Copiar todo el código de la aplicación Python, incluyendo main.py
-COPY app/ /app/
+# Actualizar pip en el entorno virtual
+RUN /app/venv/bin/pip install --upgrade pip
 
-# Generar Prisma Client para Python
+# Instalar dependencias de Python en el entorno virtual
+RUN /app/venv/bin/pip install --no-cache-dir -r requirements.txt
+
+# Instalar Prisma localmente en el proyecto
+RUN npm install prisma@4.15.0 prisma-client-py
+
+# Instalar Prisma Client para Python en el entorno virtual
+RUN /app/venv/bin/pip install prisma-client
+
+# Generar Prisma Client
 RUN npx prisma generate --schema=/app/prisma/schema.prisma
 
-# Ejecutar el archivo principal de Python
-CMD ["python", "main.py"]
+# Dar permisos de ejecución al script de entrada
+RUN chmod +x /entrypoint.sh
+
+# Establecer el entrypoint
+ENTRYPOINT ["/entrypoint.sh"]
