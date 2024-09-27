@@ -1,9 +1,8 @@
-version: '3.8'
-
 services:
   selenium:
     image: selenium/standalone-chrome
     container_name: selenium
+    platform: linux/x86_64
     ports:
       - "4444:4444"
     networks:
@@ -19,7 +18,7 @@ services:
     env_file:
       - python/app/.env  
     environment:
-      - DATABASE_URL=mysql://root:jaruapi@jaru-api-mysql-1:3306/jaru_cej
+      - DATABASE_URL=mysql://root:jaruapi@mysql:3306/jaru_cej
       - API_KEY=tu_api_key_aquí
       - API_KEY_NAME=X-API-KEY
     depends_on:
