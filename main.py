@@ -16,19 +16,21 @@ import random
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 import requests
 
-
 from prisma import Prisma
 
 import logging
 import os
 from dotenv import load_dotenv
 
+
 def prisma_reconect():
     prisma.disconnect()
     prisma.connect()
 
+
 # Configuración de reintento
-@retry(stop=stop_after_attempt(3), wait=wait_fixed(2), retry=retry_if_exception_type(requests.exceptions.RequestException))
+@retry(stop=stop_after_attempt(3), wait=wait_fixed(2),
+       retry=retry_if_exception_type(requests.exceptions.RequestException))
 def descargar_archivo(url, s):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36',
@@ -43,80 +45,90 @@ def descargar_archivo(url, s):
     return archivo
 
 
-def guardar_actuaciones_expediente(id_expediente, lista_actuaciones, id_proceso):
+def guardar_actuaciones_expediente(id_expediente, actuacion, id_proceso):
     date_format_con_hora = '%d/%m/%Y %H:%M'
     date_format_sin_hora = '%d/%m/%Y'
 
-    print("-------- Iniciando guardado de actuaciones ---------")
+    print("-------- Iniciando guardado de actuación ---------")
 
-    for actuacion in lista_actuaciones:
+    # Obtiene un identificador por cada actuacion para eliminarlo del modelo si es que se encuentra guardado
 
-        # Obtiene un identificador por cada actuacion para eliminarlo del modelo si es que se encuentra guardado
+    idActuacion = actuacion.get('fecha').strip() + actuacion.get('resolucion').strip() + actuacion.get(
+        'sumilla').strip()[:200]
+    idActuacion = idActuacion.replace(' ', '')
 
-        idActuacion = actuacion.get('fecha').strip() + actuacion.get('resolucion').strip() + actuacion.get(
-            'sumilla').strip()[:200]
-        idActuacion = idActuacion.replace(' ', '')
+    expediente_actuacion = prisma.cej_expedientesactuaciones.find_first(
+        where= {
+            'idActuacion': idActuacion,
+        }
+    )
 
-        if len(actuacion.get('fecha')) > 10:
-            try:
-                dt_fecha = datetime.strptime(actuacion.get('fecha'), date_format_con_hora)
-            except:
-                dt_fecha = None
-        else:
-            try:
-                dt_fecha = datetime.strptime(actuacion.get('fecha'), date_format_sin_hora)
-            except:
-                dt_fecha = None
+    if expediente_actuacion:
+        print("------------ Actuación ya guardada. ------------")
 
-        if len(actuacion.get('proveido')) > 10:
-            try:
-                dt_proveido = datetime.strptime(actuacion.get('proveido'), date_format_con_hora)
-            except:
-                dt_proveido = None
-        else:
-            try:
-                dt_proveido = datetime.strptime(actuacion.get('proveido'), date_format_sin_hora)
-            except:
-                dt_proveido = None
+        return
 
-        now = datetime.now()
+    if len(actuacion.get('fecha')) > 10:
+        try:
+            dt_fecha = datetime.strptime(actuacion.get('fecha'), date_format_con_hora)
+        except:
+            dt_fecha = None
+    else:
+        try:
+            dt_fecha = datetime.strptime(actuacion.get('fecha'), date_format_sin_hora)
+        except:
+            dt_fecha = None
 
-        # Inserta la actuacion en el modelo
-        prisma.cej_expedientesactuaciones.create(
-            data={
-                'idActuacion': idActuacion,
-                'fecha': dt_fecha,
-                'resolucion': actuacion.get('resolucion'),
-                'tiponotificacion': actuacion.get('tiponotificacion'),
-                'acto': actuacion.get('acto'),
-                'proveido': dt_proveido,
-                'sumilla': actuacion.get('sumilla'),
-                'descripcion_usr': actuacion.get('descripcion_usr'),
-                'fojas': actuacion.get('fojas'),
-                'resolucion_archivo': actuacion.get('resolucion_archivo'),
-                'idExpediente': id_expediente,
-                'created_at': now,
-                'updated_at': now,
-                'idProcesoUltimo': id_proceso,
-            },
-        )
+    if len(actuacion.get('proveido')) > 10:
+        try:
+            dt_proveido = datetime.strptime(actuacion.get('proveido'), date_format_con_hora)
+        except:
+            dt_proveido = None
+    else:
+        try:
+            dt_proveido = datetime.strptime(actuacion.get('proveido'), date_format_sin_hora)
+        except:
+            dt_proveido = None
 
-    print("-------- Finalizando guardado de actuaciones ---------")
+    now = datetime.now()
+
+    # Inserta la actuacion en el modelo
+    prisma.cej_expedientesactuaciones.create(
+        data={
+            'idActuacion': idActuacion,
+            'fecha': dt_fecha,
+            'resolucion': actuacion.get('resolucion'),
+            'tiponotificacion': actuacion.get('tiponotificacion'),
+            'acto': actuacion.get('acto'),
+            'proveido': dt_proveido,
+            'sumilla': actuacion.get('sumilla'),
+            'descripcion_usr': actuacion.get('descripcion_usr'),
+            'fojas': actuacion.get('fojas'),
+            'resolucion_archivo': actuacion.get('resolucion_archivo'),
+            'idExpediente': id_expediente,
+            'created_at': now,
+            'updated_at': now,
+            'idProcesoUltimo': id_proceso,
+        },
+    )
+
+    print("-------- Finalizando guardado de actuación ---------")
 
     return
 
+
 def subir_resolucion(resolucion_archivo):
-    headers = {'Accept': 'application/json', API_KEY_NAME : API_KEY}
+    headers = {'Accept': 'application/json', API_KEY_NAME: API_KEY}
     url = URL_SUBIR_RESOLUCIONES
 
     files = {}
     if os.path.isfile(resolucion_archivo):
-       
+
         archivofinal = open(resolucion_archivo, "rb")
 
-        files['resolucion_archivo'] = (resolucion_archivo,archivofinal)
+        files['resolucion_archivo'] = (resolucion_archivo, archivofinal)
         try:
-            req = requests.post(url, headers=headers, files=files , verify=False)
+            req = requests.post(url, headers=headers, files=files, verify=False)
         except:
             req = None
 
@@ -127,20 +139,21 @@ def subir_resolucion(resolucion_archivo):
     else:
         resultado = -2
 
-    return resultado    
+    return resultado
 
 
 def valida_formato_expediente(expediente_pj):
-  patron = r'\d{5}-\d{4}-\d+-\d{4}-[A-Z]{2}-[A-Z]{2}-\d{2}'
-  return bool(re.fullmatch(patron, expediente_pj))
+    patron = r'\d{5}-\d{4}-\d+-\d{4}-[A-Z]{2}-[A-Z]{2}-\d{2}'
+    return bool(re.fullmatch(patron, expediente_pj))
 
-def main(expediente_pj, actuaciones):
+
+def main(expediente_pj, actuaciones_bd, id_expediente):
     global content_disposition, soup, archivo, archivo_resolucion, dict_Actuacion
     min_time = .2  # Tiempo mínimo en segundos
     max_time = 1.2  # Tiempo máximo en segundos
     resultado = dict()
 
-    print(f"Actuaciones de Expediente: {expediente_pj} - {actuaciones}")
+    print(f"Actuaciones de Expediente: {expediente_pj} - {actuaciones_bd}")
 
     codigo = expediente_pj.split("-")
 
@@ -154,7 +167,7 @@ def main(expediente_pj, actuaciones):
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-        prefs = {"download.default_directory": os.path.abspath("resoluciones")}
+        prefs = {"download.default_directory": os.path.abspath(CARPETA_RESOLUCIONES)}
         chrome_options.add_experimental_option("prefs", prefs)
 
         # Evitar la detección de Selenium
@@ -331,11 +344,10 @@ def main(expediente_pj, actuaciones):
 
         actuaciones_WEB = len(seguimientos_expediente)
 
-
-        nuevas_actuaciones = actuaciones_WEB >= actuaciones
+        nuevas_actuaciones = actuaciones_WEB >= actuaciones_bd
 
         if nuevas_actuaciones:
-            total_nuevas_actuaciones = actuaciones_WEB - actuaciones
+            total_nuevas_actuaciones = actuaciones_WEB - actuaciones_bd
 
             actuaciones = soup.findAll("div",
                                        {"class": re.compile('panel-body pnl-seg cpnlSeguimiento cpnlSeguimiento*')})
@@ -343,7 +355,6 @@ def main(expediente_pj, actuaciones):
             lista_nuevas_actuaciones = []
 
             FechasPrincipales = ['Fecha de Resolución:', 'Fecha de Ingreso:']
-
 
             for actos in actuaciones:
                 print('=======================================================================')
@@ -411,7 +422,6 @@ def main(expediente_pj, actuaciones):
                 # Busca los enlaces con descargas para la actuación, si encuentra descarga archivo
                 botones_descarga = actos.findAll('div', {'class': 'dBotonDesc'})
 
-
                 if len(botones_descarga) > 0:
                     for detalle_descarga in botones_descarga:
                         archivo = None
@@ -447,11 +457,13 @@ def main(expediente_pj, actuaciones):
                                         archivo_resolucion = f'{expediente_pj}{archivo_resolucion.strip()}'
 
                                     # Guardar el archivo
-                                    archivo_resolucion_final = os.path.join("resoluciones", archivo_resolucion)
+                                    archivo_resolucion_final = os.path.join(CARPETA_RESOLUCIONES, archivo_resolucion)
                                     with open(archivo_resolucion_final, 'wb') as f:
                                         f.write(archivo.content)
                                     print(f'Archivo guardado correctamente en: {archivo_resolucion_final}')
                                     dict_Actuacion['resolucion_archivo'] = archivo_resolucion_final
+                                    guardar_actuaciones_expediente(id_expediente, dict_Actuacion, id_expediente)
+
 
                                 except requests.exceptions.RequestException as e:
                                     dict_Actuacion['resolucion_archivo'] = f'error descarga: {e}'
@@ -459,11 +471,14 @@ def main(expediente_pj, actuaciones):
                             else:
                                 print("URL no válida para la descarga")
                         else:
+                            dict_Actuacion['resolucion_archivo'] = None
                             print("No se encontró el botón de descarga")
+
 
                         # Pausa para evitar sobrecargar el servidor
                         time.sleep(3)
 
+                guardar_actuaciones_expediente(id_expediente, dict_Actuacion, id_expediente)
                 lista_nuevas_actuaciones.append(dict_Actuacion)
         else:
             lista_nuevas_actuaciones = []
@@ -481,6 +496,7 @@ def main(expediente_pj, actuaciones):
         logging.info(e)
 
     return resultado
+
 
 def actualizar_expediente(id_expediente, actuaciones_bd, juzgado, partes):
     print("----- Actualizando Expediente -----")
@@ -500,13 +516,14 @@ def actualizar_expediente(id_expediente, actuaciones_bd, juzgado, partes):
     )
     return update
 
+
 if __name__ == '__main__':
     load_dotenv()
 
     # Inicializar y conectar la instancia de Prisma
     prisma = Prisma()
     prisma.connect()
-    
+
     API_KEY = os.getenv("API_KEY")
     API_KEY_NAME = os.getenv("API_KEY_NAME")
     URL_SUBIR_RESOLUCIONES = os.getenv("URL_SUBIR_RESOLUCIONES")
@@ -524,14 +541,12 @@ if __name__ == '__main__':
 
     for expediente in expedientes:
         print("----- Iniciando Scraping Expediente CEJ -----")
-        actuaciones = main(expediente.expedientePJ, expediente.actuaciones)
-        guardar_actuaciones_expediente(expediente.idExpediente, actuaciones.get('Detalle'), expediente.idExpediente)
-        actualizar_expediente(expediente.idExpediente,
-                              actuaciones.get('Actuaciones'),
-                              actuaciones.get('Juzgado'),
-                              actuaciones.get('Partes'))
+        actuaciones = main(expediente.expedientePJ, expediente.actuaciones, expediente.idExpediente)
+
+        if actuaciones.get("Actuaciones") is not None:
+            actualizar_expediente(expediente.idExpediente,
+                                  actuaciones.get('Actuaciones'),
+                                  actuaciones.get('Juzgado'),
+                                  actuaciones.get('Partes'))
+
         print("----- Finalizando Scraping Expediente CEJ -----")
-
-
-
-
