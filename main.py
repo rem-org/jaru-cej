@@ -481,6 +481,7 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
 
                 guardar_actuaciones_expediente(id_expediente, dict_Actuacion, id_expediente)
                 lista_nuevas_actuaciones.append(dict_Actuacion)
+                driver.quit()
         else:
             lista_nuevas_actuaciones = []
 
@@ -518,36 +519,36 @@ def actualizar_expediente(id_expediente, actuaciones_bd, juzgado, partes):
     return update
 
 
-if __name__ == '__main__':
-    load_dotenv()
-
-    # Inicializar y conectar la instancia de Prisma
-    prisma = Prisma()
-    prisma.connect()
-
-    API_KEY = os.getenv("API_KEY")
-    API_KEY_NAME = os.getenv("API_KEY_NAME")
-    URL_SUBIR_RESOLUCIONES = os.getenv("URL_SUBIR_RESOLUCIONES")
-    URL_ENDPOINT_ENVIA_EMAIL = os.getenv("URL_ENDPOINT_ENVIA_EMAIL")
-    URL_ENDPOINT_CONSULTA_AD = os.getenv("URL_ENDPOINT_CONSULTA_AD")
-    CARPETA_RESOLUCIONES = os.getenv("CARPETA_RESOLUCIONES")
-    LOG_FILE = os.getenv("LOG_FILE")
-    pathScript = os.path.realpath(os.path.dirname(__file__))
-
-    expedientes = prisma.cej_expedientes.find_many(
-        where={
-            'activo': 'S',
-        },
-    )
-
-    for expediente in expedientes:
+try:
+    if __name__ == '__main__':
         print("----- Iniciando Scraping Expediente CEJ -----")
-        actuaciones = main(expediente.expedientePJ, expediente.actuaciones, expediente.idExpediente)
+        load_dotenv()
 
-        if actuaciones.get("Actuaciones") is not None:
-            actualizar_expediente(expediente.idExpediente,
-                                  actuaciones.get('Actuaciones'),
-                                  actuaciones.get('Juzgado'),
-                                  actuaciones.get('Partes'))
+        prisma = Prisma()
+        prisma.connect()
 
-        print("----- Finalizando Scraping Expediente CEJ -----")
+        API_KEY = os.getenv("API_KEY")
+        API_KEY_NAME = os.getenv("API_KEY_NAME")
+        URL_SUBIR_RESOLUCIONES = os.getenv("URL_SUBIR_RESOLUCIONES")
+        URL_ENDPOINT_ENVIA_EMAIL = os.getenv("URL_ENDPOINT_ENVIA_EMAIL")
+        URL_ENDPOINT_CONSULTA_AD = os.getenv("URL_ENDPOINT_CONSULTA_AD")
+        CARPETA_RESOLUCIONES = os.getenv("CARPETA_RESOLUCIONES")
+        LOG_FILE = os.getenv("LOG_FILE")
+        pathScript = os.path.realpath(os.path.dirname(__file__))
+
+        print("Prisma conectado")
+
+        expedientes = prisma.cej_expedientes.find_many(
+            where={'activo': 'S'},
+        )
+        print(f"Expedientes encontrados: {len(expedientes)}")
+
+        for expediente in expedientes:
+            actuaciones = main(expediente.expedientePJ, expediente.actuaciones, expediente.idExpediente)
+            if actuaciones.get("Actuaciones") is not None:
+                actualizar_expediente(expediente.idExpediente, actuaciones.get('Actuaciones'),
+                                      actuaciones.get('Juzgado'), actuaciones.get('Partes'))
+            print("----- Finalizando Scraping Expediente CEJ -----")
+
+except Exception as e:
+    print(f"Ocurrió un error: {e}")
