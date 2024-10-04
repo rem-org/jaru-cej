@@ -204,11 +204,21 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
         print(f"Durmiendo por {sleep_time:.2f} segundos...")
         time.sleep(sleep_time)
 
-        driver.switch_to.new_window('tab')
+        try:
+            driver.switch_to.new_window('tab')
+        except Exception as e:
+            print(e)    
 
-        driver.get("https://cej.pj.gob.pe/cej/xyhtml")
+        try:
+            driver.get("https://cej.pj.gob.pe/cej/xyhtml")
+        except Exception as e:
+            print(e)
 
-        xyhtml = driver.find_element(By.ID, "1zirobotz0")    
+        try:
+            xyhtml = driver.find_element(By.ID, "1zirobotz0")
+        except Exception as e:
+            print(e)     
+
 
         valor_captcha = xyhtml.get_attribute("value")
 
