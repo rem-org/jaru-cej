@@ -6,6 +6,7 @@ from selenium.webdriver.common.by import By
 
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service
 
 from bs4 import BeautifulSoup
 import requests
@@ -192,7 +193,12 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         chrome_options.add_experimental_option('useAutomationExtension', False)
         # chrome_options.add_argument("--headless")  # Ejecutar en modo headless
-        driver = webdriver.Chrome(options=chrome_options)
+        service = Service('/usr/local/bin/chromedriver')
+
+        try:
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+        except Exception as e:
+            print(e)
 
         # Eliminar bandera de automatización de Selenium
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
@@ -216,12 +222,12 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
         driver.switch_to.new_window('tab')
 
         try:
-             driver.get("https://cej.pj.gob.pe/cej/xyhtml")
+            driver.get("https://cej.pj.gob.pe/cej/xyhtml")
         except Exception as e:
             print(e)
 
         try:
-             xyhtml = driver.find_element(By.ID, "1zirobotz0")
+            xyhtml = driver.find_element(By.ID, "1zirobotz0")
         except Exception as e:
             print(e)     
 
