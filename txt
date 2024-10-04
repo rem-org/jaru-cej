@@ -1,1 +1,1 @@
-docker cp /Users/dev.pierci/Workspace/jaru-cej/resoluciones jaru-api-app-1:/var/www/storage/app/public
+docker cp C:\Users\PCR\Workspace\jaru-cej\resoluciones jaru-api-app-1:/var/www/storage/app/public

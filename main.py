@@ -27,13 +27,24 @@ def prisma_reconect():
     prisma.disconnect()
     prisma.connect()
 
+def proxies():
+    return  {
+        'http': f'http://{PROXY_USER}:{PROXY_PASSWORD}@{PROXY_HOST}:{PROXY_PORT}',
+        'https': f'https://{PROXY_USER}:{PROXY_PASSWORD}@{PROXY_HOST}:{PROXY_PORT}'
+    }
 
 # Configuración de reintento
 @retry(stop=stop_after_attempt(3), wait=wait_fixed(2),
        retry=retry_if_exception_type(requests.exceptions.RequestException))
 def descargar_archivo(url, s):
+    user_agents = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0"
+    ] 
+
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.121 Safari/537.36',
+        'User-Agent': f'{random.choice(user_agents)}',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'en-US,en;q=0.5',
         'Connection': 'keep-alive',
@@ -153,6 +164,12 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
     max_time = 1.2  # Tiempo máximo en segundos
     resultado = dict()
 
+    user_agents = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0"
+    ] 
+
     print(f"Actuaciones de Expediente: {expediente_pj} - {actuaciones_bd}")
 
     codigo = expediente_pj.split("-")
@@ -161,7 +178,7 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
         chrome_options = Options()
 
         chrome_options.add_argument(
-            "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.154 Safari/537.36")
+            f"--user-agent={random.choice(user_agents)}")
         # abre browser (Chrome)
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--disable-gpu")
@@ -322,7 +339,7 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
 
         botones[buscador].click()
 
-        time.sleep(1)
+        time.sleep(sleep_time)
 
         # Copia los cookies de la sesion de Selenium para abrir una sesion con requests
         # la sesion de requests es necesaria para descargar las resoluciones
@@ -477,7 +494,7 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
 
 
                         # Pausa para evitar sobrecargar el servidor
-                        time.sleep(3)
+                        time.sleep(sleep_time)
 
                 guardar_actuaciones_expediente(id_expediente, dict_Actuacion, id_expediente)
                 lista_nuevas_actuaciones.append(dict_Actuacion)
@@ -523,7 +540,6 @@ try:
     if __name__ == '__main__':
         print("----- Iniciando Scraping Expediente CEJ -----")
         load_dotenv()
-
         prisma = Prisma()
         prisma.connect()
 
@@ -533,6 +549,10 @@ try:
         URL_ENDPOINT_ENVIA_EMAIL = os.getenv("URL_ENDPOINT_ENVIA_EMAIL")
         URL_ENDPOINT_CONSULTA_AD = os.getenv("URL_ENDPOINT_CONSULTA_AD")
         CARPETA_RESOLUCIONES = os.getenv("CARPETA_RESOLUCIONES")
+        PROXY_HOST = os.getenv("PROXY_HOST")
+        PROXY_PORT = os.getenv("PROXY_PORT")
+        PROXY_USER = os.getenv("PROXY_USER")
+        PROXY_PASSWORD = os.getenv("PROXY_PASSWORD")
         LOG_FILE = os.getenv("LOG_FILE")
         pathScript = os.path.realpath(os.path.dirname(__file__))
 
