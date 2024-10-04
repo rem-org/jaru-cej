@@ -186,6 +186,7 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+        chrome_options.add_argument("--remote-debugging-port=9222")
         prefs = {"download.default_directory": os.path.abspath(CARPETA_RESOLUCIONES)}
         chrome_options.add_experimental_option("prefs", prefs)
 
@@ -219,7 +220,10 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
         print(f"Durmiendo por {sleep_time:.2f} segundos...")
         time.sleep(sleep_time)
 
-        driver.switch_to.new_window('tab')
+        try:
+            driver.switch_to.new_window('tab')
+        except Exception as e:
+            print(e)    
 
         try:
             driver.get("https://cej.pj.gob.pe/cej/xyhtml")
@@ -369,7 +373,10 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
         for cookie in driver.get_cookies():
             s.cookies.set(cookie['name'], cookie['value'], domain=cookie['domain'])
 
-        pagina_html = driver.page_source
+        try:
+            pagina_html = driver.page_source
+        except Exception as e:
+            print(e)    
 
         try:
             soup = BeautifulSoup(pagina_html, "lxml")
