@@ -22,6 +22,7 @@ from prisma import Prisma
 import logging
 import os
 from dotenv import load_dotenv
+import chromedriver_autoinstaller as chromedriver
 
 
 def prisma_reconect():
@@ -174,6 +175,11 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
     print(f"Actuaciones de Expediente: {expediente_pj} - {actuaciones_bd}")
 
     codigo = expediente_pj.split("-")
+
+    try:
+        chromedriver.install()
+    except Exception as e:
+        print(e)    
 
     try:
         chrome_options = Options()
