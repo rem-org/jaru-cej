@@ -1,12 +1,13 @@
 from datetime import datetime
 
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
 
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
+
 
 from bs4 import BeautifulSoup
 import requests
@@ -22,7 +23,6 @@ from prisma import Prisma
 import logging
 import os
 from dotenv import load_dotenv
-import chromedriver_autoinstaller as chromedriver
 
 
 def prisma_reconect():
@@ -177,33 +177,11 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
     codigo = expediente_pj.split("-")
 
     try:
-        chromedriver.install()
-    except Exception as e:
-        print(e)    
-
-    try:
-        chrome_options = Options()
-
-        chrome_options.add_argument(
-            f"--user-agent={random.choice(user_agents)}")
-        # abre browser (Chrome)
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-        chrome_options.add_argument("--remote-debugging-port=9222")
-        prefs = {"download.default_directory": os.path.abspath(CARPETA_RESOLUCIONES)}
-        chrome_options.add_experimental_option("prefs", prefs)
-
-        # Evitar la detección de Selenium
-        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        chrome_options.add_experimental_option('useAutomationExtension', False)
-        # chrome_options.add_argument("--headless")  # Ejecutar en modo headless
-        service = Service('/usr/local/bin/chromedriver')
+        firefox_options = Options()
+        firefox_options.add_argument("--headless")  
 
         try:
-            driver = webdriver.Chrome(service=service, options=chrome_options)
+            driver = webdriver.Firefox(options=firefox_options)
         except Exception as e:
             print(e)
 
