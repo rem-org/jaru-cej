@@ -206,13 +206,11 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
 
         try:
             driver.switch_to.new_window('tab')
+            driver.get("https://cej.pj.gob.pe/cej/xyhtml")
+            print("Cambié al nuevo tab")
+            print(driver)
         except Exception as e:
             print(e)    
-
-        try:
-            driver.get("https://cej.pj.gob.pe/cej/xyhtml")
-        except Exception as e:
-            print(e)
 
         try:
             xyhtml = driver.find_element(By.ID, "1zirobotz0")
