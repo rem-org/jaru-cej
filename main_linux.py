@@ -1,15 +1,16 @@
 from datetime import datetime
 
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.common.by import By
-from selenium.webdriver.ie.service import Service
 
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+
 
 from bs4 import BeautifulSoup
+import requests
 import re
 import time
 import random
@@ -128,6 +129,32 @@ def guardar_actuaciones_expediente(id_expediente, actuacion, id_proceso):
 
     return
 
+
+def subir_resolucion(resolucion_archivo):
+    headers = {'Accept': 'application/json', API_KEY_NAME: API_KEY}
+    url = URL_SUBIR_RESOLUCIONES
+
+    files = {}
+    if os.path.isfile(resolucion_archivo):
+
+        archivofinal = open(resolucion_archivo, "rb")
+
+        files['resolucion_archivo'] = (resolucion_archivo, archivofinal)
+        try:
+            req = requests.post(url, headers=headers, files=files, verify=False)
+        except:
+            req = None
+
+        if req:
+            resultado = req.status_code
+        else:
+            resultado = -1
+    else:
+        resultado = -2
+
+    return resultado
+
+
 def valida_formato_expediente(expediente_pj):
     patron = r'\d{5}-\d{4}-\d+-\d{4}-[A-Z]{2}-[A-Z]{2}-\d{2}'
     return bool(re.fullmatch(patron, expediente_pj))
@@ -146,36 +173,17 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
     ] 
 
     print(f"Actuaciones de Expediente: {expediente_pj} - {actuaciones_bd}")
-    proxies = []
 
     codigo = expediente_pj.split("-")
 
     try:
-        with open('valid_proxies.txt', 'r') as f:
-            proxies = [linea.strip() for linea in f]
-    except Exception as error:
-        print(error)
+        firefox_options = Options()
+        firefox_options.add_argument("--headless")  
 
-    try:
-        chrome_options = Options()
-
-        chrome_options.add_argument(
-            f"--user-agent={random.choice(user_agents)}")
-        # abre browser (Chrome)
-        # chrome_options.add_argument("--headless")
-        # chrome_options.add_argument(f'--proxy-server=http://{random.choice(proxies)}')
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-        prefs = {"download.default_directory": os.path.abspath(CARPETA_RESOLUCIONES)}
-        chrome_options.add_experimental_option("prefs", prefs)
-
-        # Evitar la detección de Selenium
-        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-        chrome_options.add_experimental_option('useAutomationExtension', False)
-        # chrome_options.add_argument("--headless")  # Ejecutar en modo headless
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),options=chrome_options)
+        try:
+            driver = webdriver.Firefox(options=firefox_options)
+        except Exception as e:
+            print(e)
 
         # Eliminar bandera de automatización de Selenium
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
@@ -196,15 +204,16 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
         print(f"Durmiendo por {sleep_time:.2f} segundos...")
         time.sleep(sleep_time)
 
-        driver.switch_to.new_window('tab')
-
         try:
-             driver.get("https://cej.pj.gob.pe/cej/xyhtml")
+            driver.switch_to.new_window('tab')
+            driver.get("https://cej.pj.gob.pe/cej/xyhtml")
+            print("Cambié al nuevo tab")
+            print(driver)
         except Exception as e:
-            print(e)
+            print(e)    
 
         try:
-             xyhtml = driver.find_element(By.ID, "1zirobotz0")
+            xyhtml = driver.find_element(By.ID, "1zirobotz0")
         except Exception as e:
             print(e)     
 
@@ -346,7 +355,10 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
         for cookie in driver.get_cookies():
             s.cookies.set(cookie['name'], cookie['value'], domain=cookie['domain'])
 
-        pagina_html = driver.page_source
+        try:
+            pagina_html = driver.page_source
+        except Exception as e:
+            print(e)    
 
         try:
             soup = BeautifulSoup(pagina_html, "lxml")
@@ -540,6 +552,9 @@ try:
 
         API_KEY = os.getenv("API_KEY")
         API_KEY_NAME = os.getenv("API_KEY_NAME")
+        URL_SUBIR_RESOLUCIONES = os.getenv("URL_SUBIR_RESOLUCIONES")
+        URL_ENDPOINT_ENVIA_EMAIL = os.getenv("URL_ENDPOINT_ENVIA_EMAIL")
+        URL_ENDPOINT_CONSULTA_AD = os.getenv("URL_ENDPOINT_CONSULTA_AD")
         CARPETA_RESOLUCIONES = os.getenv("CARPETA_RESOLUCIONES")
         PROXY_HOST = os.getenv("PROXY_HOST")
         PROXY_PORT = os.getenv("PROXY_PORT")
