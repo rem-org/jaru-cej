@@ -3,12 +3,13 @@ from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from selenium.webdriver.ie.service import Service
 
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
 
 from bs4 import BeautifulSoup
-import requests
 import re
 import time
 import random
@@ -116,32 +117,6 @@ def guardar_actuaciones_expediente(id_expediente, actuacion, id_proceso):
 
     return
 
-
-def subir_resolucion(resolucion_archivo):
-    headers = {'Accept': 'application/json', API_KEY_NAME: API_KEY}
-    url = URL_SUBIR_RESOLUCIONES
-
-    files = {}
-    if os.path.isfile(resolucion_archivo):
-
-        archivofinal = open(resolucion_archivo, "rb")
-
-        files['resolucion_archivo'] = (resolucion_archivo, archivofinal)
-        try:
-            req = requests.post(url, headers=headers, files=files, verify=False)
-        except:
-            req = None
-
-        if req:
-            resultado = req.status_code
-        else:
-            resultado = -1
-    else:
-        resultado = -2
-
-    return resultado
-
-
 def valida_formato_expediente(expediente_pj):
     patron = r'\d{5}-\d{4}-\d+-\d{4}-[A-Z]{2}-[A-Z]{2}-\d{2}'
     return bool(re.fullmatch(patron, expediente_pj))
@@ -154,8 +129,15 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
     resultado = dict()
 
     print(f"Actuaciones de Expediente: {expediente_pj} - {actuaciones_bd}")
+    proxies = []
 
     codigo = expediente_pj.split("-")
+
+    try:
+        with open('valid_proxies.txt', 'r') as f:
+            proxies = [linea.strip() for linea in f]
+    except Exception as error:
+        print(error)
 
     try:
         chrome_options = Options()
@@ -163,7 +145,8 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
         chrome_options.add_argument(
             "--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.154 Safari/537.36")
         # abre browser (Chrome)
-        chrome_options.add_argument("--headless")
+        # chrome_options.add_argument("--headless")
+        # chrome_options.add_argument(f'--proxy-server=http://{random.choice(proxies)}')
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
@@ -175,7 +158,7 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         chrome_options.add_experimental_option('useAutomationExtension', False)
         # chrome_options.add_argument("--headless")  # Ejecutar en modo headless
-        driver = webdriver.Chrome(options=chrome_options)
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),options=chrome_options)
 
         # Eliminar bandera de automatización de Selenium
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
@@ -529,9 +512,6 @@ try:
 
         API_KEY = os.getenv("API_KEY")
         API_KEY_NAME = os.getenv("API_KEY_NAME")
-        URL_SUBIR_RESOLUCIONES = os.getenv("URL_SUBIR_RESOLUCIONES")
-        URL_ENDPOINT_ENVIA_EMAIL = os.getenv("URL_ENDPOINT_ENVIA_EMAIL")
-        URL_ENDPOINT_CONSULTA_AD = os.getenv("URL_ENDPOINT_CONSULTA_AD")
         CARPETA_RESOLUCIONES = os.getenv("CARPETA_RESOLUCIONES")
         LOG_FILE = os.getenv("LOG_FILE")
         pathScript = os.path.realpath(os.path.dirname(__file__))
