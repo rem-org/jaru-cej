@@ -187,7 +187,7 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
 
 
         if not valida_formato_expediente(expediente_pj):
-            logging.info("Error en el formato")
+            print("Error en el formato")
 
             # consigue captcha value
         original_window = driver.current_window_handle
@@ -220,7 +220,7 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
             driver.find_element(By.LINK_TEXT, "Por Código de Expediente").click()
             time.sleep(2)
         except Exception as e:
-            logging.info(e)
+            print(e)
 
         sleep_time = random.uniform(min_time, max_time)
         print(f"Durmiendo por {sleep_time:.2f} segundos...")
@@ -233,7 +233,7 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
             print(f"Durmiendo por {sleep_time:.2f} segundos...")
             time.sleep(sleep_time)
         except Exception as e:
-            logging.info(e)
+            print(e)
 
         try:
             driver.find_element(By.ID, "cod_anio").send_keys(codigo[1])
@@ -241,7 +241,7 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
             print(f"Durmiendo por {sleep_time:.2f} segundos...")
             time.sleep(sleep_time)
         except Exception as e:
-            logging.info(e)
+            print(e)
 
         try:
             driver.find_element(By.ID, "cod_incidente").send_keys(codigo[2])
@@ -249,7 +249,7 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
             print(f"Durmiendo por {sleep_time:.2f} segundos...")
             time.sleep(sleep_time)
         except Exception as e:
-            logging.info(e)
+            print(e)
 
         try:
             driver.find_element(By.ID, "cod_distprov").send_keys(codigo[3])
@@ -257,7 +257,7 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
             print(f"Durmiendo por {sleep_time:.2f} segundos...")
             time.sleep(sleep_time)
         except Exception as e:
-            logging.info(e)
+            print(e)
 
         try:
             driver.find_element(By.ID, "cod_organo").send_keys(codigo[4])
@@ -265,7 +265,7 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
             print(f"Durmiendo por {sleep_time:.2f} segundos...")
             time.sleep(sleep_time)
         except Exception as e:
-            logging.info(e)
+            print(e)
 
         try:
             driver.find_element(By.ID, "cod_especialidad").send_keys(codigo[5])
@@ -273,7 +273,7 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
             print(f"Durmiendo por {sleep_time:.2f} segundos...")
             time.sleep(sleep_time)
         except Exception as e:
-            logging.info(e)
+            print(e)
 
         try:
             driver.find_element(By.ID, "cod_instancia").send_keys(codigo[6])
@@ -281,7 +281,7 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
             print(f"Durmiendo por {sleep_time:.2f} segundos...")
             time.sleep(sleep_time)
         except Exception as e:
-            logging.info(e)
+            print(e)
 
         try:
             driver.find_element(By.ID, "codigoCaptcha").send_keys(valor_captcha)
@@ -289,7 +289,7 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
             print(f"Durmiendo por {sleep_time:.2f} segundos...")
             time.sleep(sleep_time)
         except Exception as e:
-            logging.info(e)
+            print(e)
 
         try:
             driver.find_element(By.ID, "consultarExpedientes").click()
@@ -297,7 +297,7 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
             print(f"Durmiendo por {sleep_time:.2f} segundos...")
             time.sleep(sleep_time)
         except Exception as e:
-            logging.info(e)
+            print(e)
 
         wait = WebDriverWait(driver, 50)
         element_locator = (By.ID, 'divDetalles')
@@ -305,14 +305,14 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
         try:
             wait.until(EC.visibility_of_element_located(element_locator))
         except Exception as e:
-            logging.info(e)
+            print(e)
 
         buscador = 0
 
         try:
             driver.find_element(By.ID, "divDetalles")
         except Exception as e:
-            logging.info(e)
+            print(e)
 
         resumen_expedientes = driver.find_elements(By.CLASS_NAME, "divNroJuz")
 
@@ -505,8 +505,8 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
 
         driver.quit()
     except Exception as e:
-        logging.info(f"Error al abrir Edge")
-        logging.info(e)
+        print(f"Error al abrir Chrome")
+        print(e)
 
     return resultado
 
