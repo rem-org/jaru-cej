@@ -170,6 +170,7 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
         #chrome_options.add_argument("--disable-javascript")
         prefs = {"download.default_directory": os.path.abspath(CARPETA_RESOLUCIONES)}
         chrome_options.add_experimental_option("prefs", prefs)
+        chrome_options.add_argument('--remote-debugging-port=9222')
 
         # Evitar la detección de Selenium
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
