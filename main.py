@@ -52,9 +52,9 @@ def descargar_archivo(url, s):
         'Upgrade-Insecure-Requests': '1'
     }
 
-    archivo = s.get(url, headers=headers)
-    archivo.raise_for_status()  # Verifica que la respuesta fue exitosa
-    return archivo
+    archivo_descargadoo = s.get(url, headers=headers)
+    archivo_descargadoo.raise_for_status()  # Verifica que la respuesta fue exitosa
+    return archivo_descargadoo
 
 
 def guardar_actuaciones_expediente(id_expediente, actuacion, id_proceso):
@@ -134,9 +134,9 @@ def valida_formato_expediente(expediente_pj):
 
 
 def main(expediente_pj, actuaciones_bd, id_expediente):
-    global content_disposition, soup, archivo, archivo_resolucion, dict_Actuacion
-    min_time = .2  # Tiempo mínimo en segundos
-    max_time = 1.2  # Tiempo máximo en segundos
+    global content_disposition, soup, archivo, archivo_resolucion, dict_Actuacion, xyhtml
+    min_time = 2.0  # Tiempo mínimo en segundos
+    max_time = 5.0  # Tiempo máximo en segundos
     resultado = dict()
 
     user_agents = [
@@ -152,22 +152,22 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
 
     try:
         with open('valid_proxies.txt', 'r') as f:
-            proxies = [linea.strip() for linea in f]
+            list = [content.strip() for content in f]
+            proxies.append(list)
+
     except Exception as error:
         print(error)
 
     try:
         chrome_options = Options()
 
-        chrome_options.add_argument(
-            f"--user-agent={random.choice(user_agents)}")
-        # abre browser (Chrome)
-        # chrome_options.add_argument("--headless")
-        # chrome_options.add_argument(f'--proxy-server=http://{random.choice(proxies)}')
+        chrome_options.add_argument(f"--user-agent={random.choice(user_agents)}")
+        # chrome_options.add_argument(f'--proxy-server=https://{random.choice(proxies)}')
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+        #chrome_options.add_argument("--disable-javascript")
         prefs = {"download.default_directory": os.path.abspath(CARPETA_RESOLUCIONES)}
         chrome_options.add_experimental_option("prefs", prefs)
 
@@ -206,10 +206,11 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
         try:
              xyhtml = driver.find_element(By.ID, "1zirobotz0")
         except Exception as e:
-            print(e)     
-
+            print(e)
 
         valor_captcha = xyhtml.get_attribute("value")
+
+        print(f"Captcha {valor_captcha}")
 
         driver.close()
         driver.switch_to.window(original_window)
@@ -487,13 +488,11 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
                             dict_Actuacion['resolucion_archivo'] = None
                             print("No se encontró el botón de descarga")
 
-
                         # Pausa para evitar sobrecargar el servidor
                         time.sleep(sleep_time)
 
                 guardar_actuaciones_expediente(id_expediente, dict_Actuacion, id_expediente)
                 lista_nuevas_actuaciones.append(dict_Actuacion)
-                driver.quit()
         else:
             lista_nuevas_actuaciones = []
 
