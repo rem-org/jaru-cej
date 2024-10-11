@@ -187,7 +187,7 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
 
 
         if not valida_formato_expediente(expediente_pj):
-            print("Error en el formato")
+            print("Error en el formato") 
 
             # consigue captcha value
         original_window = driver.current_window_handle
@@ -203,10 +203,7 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
         except Exception as e:
             print(e)
 
-        try:
-             xyhtml = driver.find_element(By.ID, "1zirobotz0")
-        except Exception as e:
-            print(e)
+        xyhtml = driver.find_element(By.ID, "1zirobotz0")
 
         valor_captcha = xyhtml.get_attribute("value")
 
