@@ -10,6 +10,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium_stealth import stealth
+from fake_useragent import UserAgent
 
 from bs4 import BeautifulSoup
 import re
@@ -142,9 +143,10 @@ def mover_mouse(driver, x_offset=0, y_offset=0):
 
 def main(expediente_pj, actuaciones_bd, id_expediente):
     global content_disposition, soup, archivo, archivo_resolucion, dict_Actuacion, xyhtml
-    min_time = 3.0  # Tiempo mínimo en segundos
+    min_time = 2.0  # Tiempo mínimo en segundos
     max_time = 5.0  # Tiempo máximo en segundos
     resultado = dict()
+    ua = UserAgent()
 
     print(f"Actuaciones de Expediente: {expediente_pj} - {actuaciones_bd}")
     proxies = []
@@ -165,12 +167,12 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
 
         print(proxy)
 
-        chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
+        chrome_options.add_argument(f'user-agent={ua.random}')
         #chrome_options.add_argument(f'--proxy-server=106.122.8.52:3128')
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--headless")  # Ejecutar en modo headless
+        #chrome_options.add_argument("--headless")  # Ejecutar en modo headless
         chrome_options.add_argument("--disable-blink-features=AutomationControlled")
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         chrome_options.add_experimental_option('useAutomationExtension', False)
