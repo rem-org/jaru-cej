@@ -172,10 +172,13 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--disable-software-rasterizer")
         #chrome_options.add_argument("--headless")  # Ejecutar en modo headless
         chrome_options.add_argument("--disable-blink-features=AutomationControlled")
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         chrome_options.add_experimental_option('useAutomationExtension', False)
+        chrome_options.add_argument("--enable-logging")
+        chrome_options.add_argument("--v=1")  # Ajusta el nivel de detalle del log
         #chrome_options.add_argument("--disable-javascript")
         #chrome_options.add_argument('--remote-debugging-port=9222')
 
