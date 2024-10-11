@@ -204,7 +204,7 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
 
         sleep_time = random.uniform(min_time, max_time)
         print(f"Durmiendo por {sleep_time:.2f} segundos...")
-        time.sleep(sleep_time)
+        time.sleep(2)
 
         driver.execute_script("window.open('https://cej.pj.gob.pe/cej/xyhtml', '_blank');")
         driver.switch_to.window(driver.window_handles[-1])
