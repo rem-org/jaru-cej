@@ -8,6 +8,8 @@ from selenium.webdriver.ie.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium_stealth import stealth
 
 from bs4 import BeautifulSoup
 import re
@@ -39,8 +41,8 @@ def proxies():
        retry=retry_if_exception_type(requests.exceptions.RequestException))
 def descargar_archivo(url, s):
     user_agents = [
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
         "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0"
     ] 
 
@@ -132,18 +134,17 @@ def valida_formato_expediente(expediente_pj):
     patron = r'\d{5}-\d{4}-\d+-\d{4}-[A-Z]{2}-[A-Z]{2}-\d{2}'
     return bool(re.fullmatch(patron, expediente_pj))
 
+def mover_mouse(driver, x_offset=0, y_offset=0):
+    """Función para mover el mouse a una posición aleatoria o especificada."""
+    action = ActionChains(driver)
+    # Mueve el mouse a una posición aleatoria en la ventana del navegador
+    action.move_by_offset(x_offset, y_offset).perform() 
 
 def main(expediente_pj, actuaciones_bd, id_expediente):
     global content_disposition, soup, archivo, archivo_resolucion, dict_Actuacion, xyhtml
-    min_time = 2.0  # Tiempo mínimo en segundos
+    min_time = 3.0  # Tiempo mínimo en segundos
     max_time = 5.0  # Tiempo máximo en segundos
     resultado = dict()
-
-    user_agents = [
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:89.0) Gecko/20100101 Firefox/89.0"
-    ] 
 
     print(f"Actuaciones de Expediente: {expediente_pj} - {actuaciones_bd}")
     proxies = []
@@ -153,44 +154,52 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
     try:
         with open('valid_proxies.txt', 'r') as f:
             list = [content.strip() for content in f]
-            proxies.append(list)
+            proxies = list
 
     except Exception as error:
         print(error)
 
     try:
         chrome_options = Options()
+        proxy = f'http://{random.choice(proxies)}'
 
-        chrome_options.add_argument(f"--user-agent={random.choice(user_agents)}")
-        # chrome_options.add_argument(f'--proxy-server=https://{random.choice(proxies)}')
+        print(proxy)
+
+        chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
+        #chrome_options.add_argument(f'--proxy-server=106.122.8.52:3128')
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--headless")  # Ejecutar en modo headless
         chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-        #chrome_options.add_argument("--disable-javascript")
-        prefs = {"download.default_directory": os.path.abspath(CARPETA_RESOLUCIONES)}
-        chrome_options.add_experimental_option("prefs", prefs)
-        chrome_options.add_argument('--remote-debugging-port=9222')
-
-        # Evitar la detección de Selenium
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         chrome_options.add_experimental_option('useAutomationExtension', False)
-        # chrome_options.add_argument("--headless")  # Ejecutar en modo headless
+        #chrome_options.add_argument("--disable-javascript")
+        #chrome_options.add_argument('--remote-debugging-port=9222')
+
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()),options=chrome_options)
 
+        stealth(
+            driver,
+            languages=["en-US"],
+            vendor="Google Inc.",
+            platform="Win32",
+            webgl_vendor="Intel Inc.",
+            renderer="Intel Iris OpenGL Engine"
+        )
+
         # Eliminar bandera de automatización de Selenium
-        driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+        #driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
         try:
             driver.get("https://cej.pj.gob.pe/cej/forms/busquedaform.html")
         except Exception as e:
             print(e)    
 
-
         if not valida_formato_expediente(expediente_pj):
             print("Error en el formato") 
 
-            # consigue captcha value
+        # consigue captcha value
         original_window = driver.current_window_handle
 
         sleep_time = random.uniform(min_time, max_time)
@@ -200,9 +209,16 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
         driver.switch_to.new_window('tab')
 
         try:
-             driver.get("https://cej.pj.gob.pe/cej/xyhtml")
+            driver.get("https://cej.pj.gob.pe/cej/xyhtml")
         except Exception as e:
             print(e)
+
+
+        driver.implicitly_wait(sleep_time)
+
+        # Obtén la URL actual
+        current_url = driver.current_url
+        print("La URL actual es:", current_url)
 
         xyhtml = driver.find_element(By.ID, "1zirobotz0")
 

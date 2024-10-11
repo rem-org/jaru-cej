@@ -50,3 +50,4 @@ asttokens~=2.4.1
 setuptools~=58.0.4
 tenacity~=9.0.0
 webdriver-manager~=4.0.2
+selenium-stealth==1.0.6
