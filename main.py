@@ -206,13 +206,8 @@ def main(expediente_pj, actuaciones_bd, id_expediente):
         print(f"Durmiendo por {sleep_time:.2f} segundos...")
         time.sleep(sleep_time)
 
-        driver.switch_to.new_window('tab')
-
-        try:
-            driver.get("https://cej.pj.gob.pe/cej/xyhtml")
-        except Exception as e:
-            print(e)
-
+        driver.execute_script("window.open('https://cej.pj.gob.pe/cej/xyhtml', '_blank');")
+        driver.switch_to.window(driver.window_handles[-1])
 
         driver.implicitly_wait(sleep_time)
 
